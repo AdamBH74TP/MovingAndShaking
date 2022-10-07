@@ -7,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class Locomotion : MonoBehaviour
 {
-    CharacterController charactercController;
+    CharacterController characterController;
     Transform playerContainer, cameraContainer;
 
     public float speed = 6.0f;
@@ -24,7 +24,7 @@ public class Locomotion : MonoBehaviour
     void Start()
     {
         Cursor.visible = false;
-        charactercController = GetComponent<CharacterController>();
+        characterController = GetComponent<CharacterController>();
         SetCurrentCamera();
 
         //SetCurrentCamera();
@@ -37,26 +37,55 @@ public class Locomotion : MonoBehaviour
 
         Movement();
         RotateAndLook();
+        PerspectiveCheck();
     }
 
     void SetCurrentCamera()
     {
+        SwitchPerspective switchPerspective = GetComponent<SwitchPerspective>();
+        if (switchPerspective.GetPerspective() == SwitchPerspective.Perspective.First)
+        {
+            playerContainer = gameObject.transform.Find("Container1P");
+            cameraContainer = playerContainer.transform.Find("Camera1pContainer");
+        }
+
         playerContainer = gameObject.transform.Find("Container3P");
         cameraContainer = playerContainer.transform.Find("Camera3PContainer");
     }
 
     void Movement()
     {
-        if(charactercController.isGrounded)
+        if(characterController.isGrounded)
         {
             moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical"));
             moveDirection = transform.TransformDirection(moveDirection);
             moveDirection *= speed;
 
-            //to do jumping/crouching
+            if (Input.GetButton("Jump"))
+            {
+                moveDirection.y = jumpSpeed;
+            }
+            if (Input.GetKey(KeyCode.C))
+            {
+                characterController.height = 0.65f;
+                characterController.center = new Vector3(0f, 0.5f, 0f);
+            }
+            else
+            {
+                characterController.height = 2f;
+                characterController.center = new Vector3(0f, 1f, 0f);
+            }
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                speed = 10f;
+            }
+            else
+            {
+                speed = 6f;
+            }
         }
-        moveDirection.y = gravity * Time.deltaTime;
-        charactercController.Move(moveDirection * Time.deltaTime);
+        moveDirection.y -= gravity * Time.deltaTime;
+        characterController.Move(moveDirection * Time.deltaTime);
     }
 
     void RotateAndLook()
@@ -70,6 +99,30 @@ public class Locomotion : MonoBehaviour
 
         cameraContainer.transform.localRotation = Quaternion.Euler(rotateY, 0f, 0f);
 
+    }
+
+    void PerspectiveCheck()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            SwitchPerspective switchPerspective = GetComponent<SwitchPerspective>();
+
+            if(switchPerspective != null)
+            {
+                if (switchPerspective.GetPerspective() == SwitchPerspective.Perspective.First)
+                {
+                    switchPerspective.SetPerspective(SwitchPerspective.Perspective.First);
+                }
+                else
+                {
+                    switchPerspective.SetPerspective(SwitchPerspective.Perspective.Third);
+                }
+
+                SetCurrentCamera();
+                    
+
+            }
+        }
     }
 
 }
